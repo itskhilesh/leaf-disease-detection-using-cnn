@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AgrixAI — Smart Crop Intelligence</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{color-scheme:dark}
+html{scroll-behavior:smooth}
+body{margin:0;background:#0a1f14;color:#e2eed9;font-family:'Inter','Segoe UI',system-ui,sans-serif;font-size:15px;overflow-x:hidden}
+.serif{font-family:'Playfair Display',Georgia,serif}
+
+/* Background farm scene */
+.farm-bg{position:fixed;inset:0;z-index:0;background:linear-gradient(165deg,#0d2818 0%,#15412a 30%,#1a4a30 50%,#0f3321 70%,#091f13 100%);overflow:hidden}
+.farm-bg::before{content:'';position:absolute;inset:0;background:
+  radial-gradient(ellipse 900px 500px at 75% 20%,rgba(34,120,70,.35),transparent),
+  radial-gradient(ellipse 600px 400px at 20% 70%,rgba(20,80,45,.4),transparent),
+  radial-gradient(ellipse 400px 300px at 50% 50%,rgba(45,130,75,.15),transparent)}
+.farm-bg::after{content:'';position:absolute;bottom:0;left:0;right:0;height:45%;background:linear-gradient(to top,rgba(10,31,20,.95),transparent)}
+
+/* Mist/fog particles */
+.mist{position:absolute;width:100%;height:100%;opacity:.12}
+.mist-layer{position:absolute;width:200%;height:100%;background:repeating-linear-gradient(90deg,transparent,rgba(144,200,160,.08) 25%,transparent 50%);animation:mist-drift 30s linear infinite}
+@keyframes mist-drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* Glass morphism cards */
+.glass{background:linear-gradient(135deg,rgba(20,60,35,.65),rgba(15,45,28,.45));backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(100,180,120,.2);box-shadow:0 8px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05)}
+.glass-light{background:linear-gradient(135deg,rgba(30,80,50,.5),rgba(20,60,38,.35));backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);border:1px solid rgba(100,180,120,.15);box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.glass-dark{background:linear-gradient(135deg,rgba(10,30,18,.75),rgba(8,25,15,.6));backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(80,150,100,.15);box-shadow:0 12px 40px rgba(0,0,0,.4)}
+
+/* Navbar */
+.nav-link{position:relative;padding:8px 16px;border-radius:8px;color:rgba(200,220,200,.75);font-weight:500;font-size:14px;transition:all .3s ease;cursor:pointer;text-decoration:none}
+.nav-link:hover{color:#fff;background:rgba(255,255,255,.06)}
+.nav-active{background:rgba(180,160,80,.2)!important;color:#d4c065!important;border:1px solid rgba(180,160,80,.3);font-weight:600}
+
+/* Golden accent */
+.gold{color:#d4c065}
+.gold-bg{background:linear-gradient(135deg,#c4a94d,#dbb84e)}
+
+/* Gauge */
+.gauge-track{fill:none;stroke:rgba(255,255,255,.08);stroke-width:12;stroke-linecap:round}
+.gauge-fill{fill:none;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1)}
+.gauge-green{stroke:url(#gaugeGrad)}
+
+/* Tags */
+.tag{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;backdrop-filter:blur(8px)}
+.tag-green{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#4ade80}
+.tag-red{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#f87171}
+.tag-amber{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:#fbbf24}
+
+/* Recommendation items */
+.rec-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06);align-items:flex-start}
+.rec-item:last-child{border-bottom:none}
+.rec-dot{width:8px;height:8px;border-radius:50%;background:#d4c065;margin-top:6px;flex-shrink:0}
+
+/* Leaf display */
+.leaf-glow{filter:drop-shadow(0 0 30px rgba(100,200,120,.3)) drop-shadow(0 0 60px rgba(60,160,80,.15))}
+.leaf-thumb{width:52px;height:52px;border-radius:16px;object-fit:cover;border:2px solid rgba(255,255,255,.1);cursor:pointer;transition:all .3s ease}
+.leaf-thumb:hover,.leaf-thumb.active{border-color:#d4c065;transform:scale(1.1);box-shadow:0 4px 16px rgba(212,192,101,.3)}
+
+/* Tool icons circle */
+.tool-ring{position:absolute;width:280px;height:280px;top:50%;left:50%;transform:translate(-50%,-50%)}
+.tool-icon{position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(20,60,35,.7);border:1px solid rgba(100,180,120,.2);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all .3s ease;backdrop-filter:blur(8px)}
+.tool-icon:hover{background:rgba(212,192,101,.2);border-color:#d4c065;transform:scale(1.15)}
+
+/* Bar chart */
+.bar{height:8px;border-radius:4px;transition:width .8s ease}
+
+/* Progress bars */
+.soil-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.08)}
+.soil-bar-fill{height:100%;border-radius:2px;transition:width 1s ease}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(100,180,120,.2);border-radius:3px}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes pulse-soft{0%,100%{opacity:1}50%{opacity:.7}}
+@keyframes scan{0%,100%{transform:translateY(0)}50%{transform:translateY(200px)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes rotate-slow{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+.fade-up{animation:fadeUp .6s ease both}
+.pulse-soft{animation:pulse-soft 3s ease-in-out infinite}
+.float{animation:float 4s ease-in-out infinite}
+.scanline{animation:scan 4s ease-in-out infinite;filter:drop-shadow(0 0 6px rgba(100,200,120,.5))}
+
+/* Leaflet overrides for dark theme */
+.leaflet-container{background:#0d2818!important}
+.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-layer,.leaflet-tile-container,.leaflet-zoom-box{position:absolute;left:0;top:0}
+.leaflet-container{overflow:hidden;position:relative;outline:0;font:inherit;touch-action:none}
+.leaflet-tile{visibility:hidden;user-select:none;max-width:none!important}.leaflet-tile-loaded{visibility:inherit}
+.leaflet-tile-pane{z-index:200}.leaflet-overlay-pane{z-index:400}.leaflet-marker-pane{z-index:600}.leaflet-pane{z-index:400}
+.leaflet-map-pane svg{position:absolute}.leaflet-zoom-animated{transform-origin:0 0}
+.leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}.leaflet-top{top:0}.leaflet-bottom{bottom:0}.leaflet-left{left:0}.leaflet-right{right:0}
+.leaflet-control{position:relative;z-index:800;pointer-events:auto;float:left;clear:both;margin:10px}.leaflet-right .leaflet-control{float:right}
+.leaflet-control-zoom{border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.leaflet-control-zoom a{display:block;width:34px;height:34px;line-height:34px;text-align:center;background:rgba(20,60,35,.85);color:#a3d9b1;font-weight:800;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.1)}
+.leaflet-control-attribution{font-size:10px;background:rgba(10,31,20,.8)!important;color:#7a9;padding:0 5px}.leaflet-control-attribution a{color:#6dbe8a}
+.leaflet-interactive{cursor:pointer}.leaflet-grab{cursor:grab}
+
+/* Chart styles */
+.chart-svg text{fill:rgba(200,220,200,.6)}
+
+/* Input styles for dark theme */
+.dark-input{background:rgba(10,30,18,.6)!important;border:1px solid rgba(100,180,120,.2);border-radius:10px;color:#e2eed9;padding:10px 14px;font-size:14px;transition:border-color .3s}
+.dark-input:focus{border-color:#4ade80;outline:none;box-shadow:0 0 0 3px rgba(74,222,128,.1)}
+.dark-input::placeholder{color:rgba(200,220,200,.3)}
+select.dark-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234ade80' d='M6 8L1 3h10z'/%3E%3C/svg%3E")!important;background-repeat:no-repeat;background-position:right 12px center}
+
+/* Button styles */
+.btn-primary{background:linear-gradient(135deg,#2d8a4e,#1a6b38);color:#fff;border:none;border-radius:12px;padding:10px 20px;font-weight:600;font-size:14px;cursor:pointer;transition:all .3s;box-shadow:0 4px 16px rgba(45,138,78,.3)}
+.btn-primary:hover{background:linear-gradient(135deg,#35a05a,#1f7d42);transform:translateY(-1px);box-shadow:0 6px 20px rgba(45,138,78,.4)}
+.btn-primary:disabled{opacity:.5;cursor:default;transform:none}
+.btn-outline{background:transparent;color:#4ade80;border:1px solid rgba(74,222,128,.3);border-radius:12px;padding:10px 20px;font-weight:600;font-size:14px;cursor:pointer;transition:all .3s}
+.btn-outline:hover{background:rgba(74,222,128,.1);border-color:#4ade80}
+.btn-gold{background:linear-gradient(135deg,#c4a94d,#dbb84e);color:#1a2f1e;border:none;border-radius:12px;padding:10px 20px;font-weight:700;font-size:14px;cursor:pointer;transition:all .3s;box-shadow:0 4px 16px rgba(196,169,77,.3)}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(196,169,77,.4)}
+
+/* Tooltip */
+.tooltip-text{visibility:hidden;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:rgba(10,30,18,.9);color:#e2eed9;padding:6px 12px;border-radius:8px;font-size:12px;white-space:nowrap;border:1px solid rgba(100,180,120,.2);pointer-events:none;opacity:0;transition:all .2s}
+.tool-icon:hover .tooltip-text{visibility:visible;opacity:1}
+
+/* Note/Alert boxes */
+.note{border-radius:12px;border:1px solid;padding:10px 14px;font-size:13px}
+.note-bad{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#fca5a5}
+.note-warn{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);color:#fcd34d}
+.note-info{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#86efac}
+
+@media(max-width:768px){
+  .mobile-nav{display:grid!important}
+  .desktop-nav{display:none!important}
+}
+@media(min-width:769px){
+  .mobile-nav{display:none!important}
+}
+
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #4ade80;outline-offset:2px}
+</style></head>
+<body><div id="root"></div>
+<script>
+const{useState,useEffect,useRef,useCallback}=React,html=htm.bind(React.createElement);
+const API='/api';let LANG='en';
+
+const T={en:{home:'Home',dash:'Dashboard',soil:'Soil Intelligence',detect:'Pest & Disease',iot:'IoT Monitor',profile:'Reports & Profile',crop_mgmt:'Crop Management',crop_report:'Crop Report',equip:'Equipments',tag:'Smart Crop Intelligence Platform',sub:'Photograph a leaf, detect diseases instantly, and get actionable insights about your soil, weather and field sensors.',cta1:'Detect Disease',cta2:'Explore Dashboard',demo:'DEMO DATA',est:'ESTIMATE · REGIONAL',health:'Crop health',moist:'Soil moisture',temp:'Temperature',hum:'Humidity',ph:'Soil pH',light:'Light',weather:'Weather forecast',recent:'Recent activity',alerts:'Alerts',gps:'Use my GPS location',apply:'Save location',upload:'Upload photo',camera:'Take photo',analyse:'Analyse leaf',crop:'Crop',village:'Village',district:'District',state:'State',pin:'PIN code'},
+hi:{home:'मुख्य पृष्ठ',dash:'डैशबोर्ड',soil:'मिट्टी की जानकारी',detect:'रोग पहचानें',iot:'IoT निगरानी',profile:'रिपोर्ट व प्रोफ़ाइल',crop_mgmt:'फसल प्रबंधन',crop_report:'फसल रिपोर्ट',equip:'उपकरण',tag:'स्मार्ट फसल इंटेलिजेंस प्लेटफॉर्म',sub:'पत्ती की फोटो लें, रोग जानें, और अपने खेत की मिट्टी, मौसम और सेंसर की जानकारी देखें।',cta1:'रोग पहचानें',cta2:'डैशबोर्ड देखें',demo:'डेमो डेटा',est:'अनुमान · क्षेत्रीय',health:'फसल स्वास्थ्य',moist:'मिट्टी की नमी',temp:'तापमान',hum:'आर्द्रता',ph:'मिट्टी pH',light:'प्रकाश',weather:'मौसम पूर्वानुमान',recent:'हाल की गतिविधि',alerts:'चेतावनियाँ',gps:'GPS से स्थान लें',apply:'स्थान सहेजें',upload:'फोटो अपलोड करें',camera:'फोटो खींचें',analyse:'पत्ती जाँचें',crop:'फसल',village:'गाँव',district:'ज़िला',state:'राज्य',pin:'पिन कोड'}};
+const t=k=>(T[LANG]&&T[LANG][k])||T.en[k]||k;
+
+// Regional soil profiles
+const R=[
+{n:'Central black-soil belt',st:'Madhya Pradesh, Maharashtra, east Gujarat',c:[21.5,77],s:'Black soil (regur/Vertisol), medium black on uplands and deep black in valleys',ph:'7.0–8.5',f:'High clay, holds moisture, rich in calcium and potash; usually low in nitrogen, phosphorus and organic matter.',cr:'Soybean, cotton, wheat, gram, sorghum, pigeon pea',cl:'Semi-arid to sub-humid; monsoon Jun–Sep, about 700–1200 mm',k:['Soybean','Cotton','Pigeon pea'],r:['Wheat','Chickpea','Safflower']},
+{n:'Western Gangetic alluvium',st:'Punjab, Haryana, Delhi, west Uttar Pradesh',c:[29.5,76.5],s:'Alluvial loam to sandy loam; saline-alkaline patches',ph:'7.0–8.5',f:'Fertile and well drained; responds strongly to nitrogen.',cr:'Wheat, rice, sugarcane, mustard, potato',cl:'Semi-arid; hot summers, cold winters; irrigation-dependent',k:['Rice','Maize','Cotton'],r:['Wheat','Mustard','Potato']},
+{n:'Eastern Gangetic alluvium',st:'East Uttar Pradesh, Bihar, West Bengal',c:[24.5,87.5],s:'Alluvial (young Khadar and older Bhangar); clayey in the delta',ph:'6.0–8.0',f:'Highly fertile with a high water table; flood-prone.',cr:'Rice, wheat, jute, maize, lentil, vegetables',cl:'Humid subtropical; heavy monsoon, 1000–1600 mm',k:['Rice','Jute','Maize'],r:['Wheat','Lentil','Potato']},
+{n:'Arid western zone',st:'West Rajasthan, Kutch',c:[26.5,72],s:'Arid sandy soils, gravelly in patches',ph:'7.5–9.0',f:'Low organic matter and water holding capacity; low nitrogen and phosphorus.',cr:'Pearl millet (bajra), cluster bean, moth bean, mustard',cl:'Arid; under 400 mm rain; extreme temperatures',k:['Bajra','Cluster bean','Moong'],r:['Mustard','Barley','Cumin']},
+{n:'Eastern red and laterite plateau',st:'Jharkhand, Odisha, Chhattisgarh',c:[22.3,84.5],s:'Red and yellow soils; lateritic on uplands',ph:'5.0–6.5',f:'Acidic, light-textured, low in nitrogen.',cr:'Rice, maize, pulses, oilseeds, millets, vegetables',cl:'Sub-humid tropical; monsoon 1100–1500 mm',k:['Rice','Maize','Pigeon pea','Millets'],r:['Gram','Mustard','Vegetables']},
+{n:'Deccan red-black region',st:'North Karnataka, Telangana, Andhra Pradesh',c:[16,78],s:'Red sandy loam mixed with black soils',ph:'6.0–8.0',f:'Red soils are low in fertility; black soils are moisture-rich.',cr:'Cotton, groundnut, sorghum, pulses, chilli, irrigated rice',cl:'Semi-arid tropical; erratic rain, 600–900 mm',k:['Cotton','Groundnut','Red gram'],r:['Sorghum','Chickpea','Sunflower']},
+{n:'Southern red and laterite',st:'Tamil Nadu, Kerala, south Karnataka',c:[11,78.5],s:'Red loam, laterite and coastal alluvium',ph:'5.0–7.0',f:'Acidic and well drained; nutrients leach easily.',cr:'Rice, coconut, banana, millets, plantation crops, vegetables',cl:'Tropical; south-west and north-east monsoons',k:['Rice','Millets','Groundnut'],r:['Rice','Pulses','Vegetables']},
+{n:'Himalayan mountain zone',st:'Himachal Pradesh, Uttarakhand, Jammu & Kashmir',c:[32,77.5],s:'Shallow stony mountain and forest soils; valley alluvium',ph:'5.0–7.0',f:'High organic matter under forest; erosion risk on slopes.',cr:'Apple, potato, maize, wheat, rajma, vegetables',cl:'Temperate to alpine; snow at altitude',k:['Maize','Potato','Rajma'],r:['Wheat','Barley','Peas']},
+{n:'North-eastern hills and plains',st:'Assam, Meghalaya and neighbours',c:[26,92.5],s:'Alluvium in Brahmaputra valley; acidic red-yellow on hills',ph:'4.5–6.5',f:'Acidic with heavy leaching but high organic matter.',cr:'Rice, tea, jute, citrus, vegetables',cl:'Humid; very heavy rain, 2000 mm and above',k:['Rice','Jute','Maize'],r:['Mustard','Potato','Pulses']},
+{n:'Konkan and west coast',st:'Konkan, Goa, coastal Karnataka',c:[17,73.5],s:'Lateritic and coastal sandy soils',ph:'5.0–6.5',f:'Acidic, low fertility and strong leaching.',cr:'Rice, coconut, cashew, mango, areca nut',cl:'Humid tropical; 2000–3500 mm rain',k:['Rice','Finger millet','Vegetables'],r:['Pulses','Vegetables']}];
+const SM={'Madhya Pradesh':0,Maharashtra:0,Gujarat:0,Punjab:1,Haryana:1,Delhi:1,'Uttar Pradesh':2,Bihar:2,'West Bengal':2,Rajasthan:3,Jharkhand:4,Odisha:4,Chhattisgarh:4,Karnataka:5,Telangana:5,'Andhra Pradesh':5,'Tamil Nadu':6,Kerala:6,'Himachal Pradesh':7,Uttarakhand:7,'Jammu & Kashmir':7,Assam:8,Meghalaya:8,Goa:9};
+const near=([a,b])=>R.reduce((x,r,i)=>{const d=(r.c[0]-a)**2+((r.c[1]-b)*Math.cos(a*Math.PI/180))**2;return d<x.d?{d,i}:x},{d:1e9,i:0}).i;
+
+// Disease knowledge base
+const KB={'tomato late blight':['High','Dark, water-soaked patches on leaves and stems; white mould underneath in humid weather.','Remove and destroy infected plants; water at the base, not overhead; use certified seed; ask local agriculture officer for fungicide advice'],
+'tomato early blight':['Moderate','Brown spots with ring patterns on older leaves, yellowing around the spots.','Rotate crops every season; mulch the soil; remove lower infected leaves; keep foliage dry'],
+'potato late blight':['High','Dark blotches on leaves that turn brown and papery; white growth on underside in damp weather.','Plant certified seed tubers; avoid waterlogging; destroy infected haulms; follow local spray advisories'],
+'corn common rust':['Moderate','Small reddish-brown pustules on both leaf surfaces.','Choose resistant hybrids; sow early; scout fields weekly'],
+'corn northern leaf blight':['Moderate to high','Long grey-green or tan cigar-shaped lesions on leaves.','Rotate with non-cereal crops; bury crop residue; use resistant varieties'],
+healthy:['None','The model sees no signs of disease on this leaf.','Keep checking weekly; irrigate at the base; maintain balanced nutrition']};
+const norm=l=>l.replace(/\(.*?\)/g,'').replace(/_+/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
+const pretty=l=>{const p=l.replace(/\(.*?\)/g,'').split(/_{2,}/).pop().replace(/_+/g,' ').trim();return p.charAt(0).toUpperCase()+p.slice(1)};
+async function predict(file,crop){const f=new FormData();f.append('image',file);f.append('crop',crop);const r=await fetch(API+'/predict',{method:'POST',body:f});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(typeof j.label!=='string'||typeof j.confidence!=='number'||j.confidence<0||j.confidence>1)throw new Error('Unexpected response');return j}
+
+const M=[['m','💧','moist','%','#22c55e'],['t','🌡️','temp','°C','#f59e0b'],['h','☁️','hum','%','#38bdf8'],['ph','🧪','ph','','#a78bfa'],['l','☀️','light','%','#fbbf24']];
+const gen=i=>({m:Math.round(46+16*Math.sin(i/4)+(i*7)%5),t:+(27+6*Math.sin(i/5)+((i*3)%4)/4).toFixed(1),h:Math.round(62+14*Math.cos(i/6)+(i*5)%4),ph:+(6.7+.3*Math.sin(i/9)).toFixed(1),l:Math.round(55+40*Math.sin(i/3.8))});
+const alertsOf=l=>[l.m<32&&['warn','Soil moisture is low. Irrigation may be needed.'],l.m>80&&['warn','Soil is very wet. Check drainage.'],l.t>36&&['bad','High temperature. Heat stress risk.'],l.h>78&&['warn','High humidity. Watch for fungal disease.'],(l.ph<5.5||l.ph>8)&&['warn','Soil pH is outside 5.5–8.0.']].filter(Boolean);
+
+function useSensors(){const[s,setS]=useState(()=>Array.from({length:24},(_,i)=>gen(i))),[live,setLive]=useState(false),lr=useRef(false);
+useEffect(()=>{let n=24,on=true;const id=setInterval(async()=>{try{const r=await fetch(API+'/sensors/latest');if(!r.ok)throw 0;const j=await r.json();if(M.some(m=>typeof j[m[0]]!=='number'))throw 0;if(!on)return;setLive(true);if(!lr.current){lr.current=true;setS([j])}else setS(a=>[...a.slice(-23),j])}catch(e){if(on&&!lr.current){setLive(false);setS(a=>[...a.slice(-23),gen(n++)])}}},5000);return()=>{on=false;clearInterval(id)}},[]);
+return{s,live,last:s[s.length-1]}}
+
+function useWeather(ll){const[w,setW]=useState({s:'idle'});useEffect(()=>{if(!ll){setW({s:'idle'});return}setW({s:'load'});const ac=new AbortController();fetch('https://api.open-meteo.com/v1/forecast?latitude='+ll[0]+'&longitude='+ll[1]+'&current=temperature_2m,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto&forecast_days=5',{signal:ac.signal}).then(r=>r.ok?r.json():Promise.reject()).then(j=>setW({s:'ok',j})).catch(e=>{if(!e||e.name!=='AbortError')setW({s:'err'})});return()=>ac.abort()},[ll&&ll.join()]);return w}
+
+// ===== UI COMPONENTS =====
+const Demo=()=>html`<span className="text-[11px] font-bold bg-amber-900/30 text-amber-400 border border-amber-700/40 rounded-full px-2 py-0.5 whitespace-nowrap">DEMO</span>`;
+const Card=({c='',children,...props})=>html`<div className=${'glass rounded-2xl p-4 md:p-5 '+c} ...${props}>${children}</div>`;
+const H=({children})=>html`<h2 className="serif text-2xl font-bold text-emerald-100">${children}</h2>`;
+const Note=({k='info',children})=>html`<div className=${'note '+(k==='bad'?'note-bad':k==='warn'?'note-warn':'note-info')}>${children}</div>`;
+
+// Health Gauge Component
+function HealthGauge({value=92,label='Excellent'}){
+  const r=70,c=2*Math.PI*r,arc=c*0.75,offset=arc-(value/100)*arc;
+  return html`<div className="flex flex-col items-center">
+    <svg width="180" height="150" viewBox="0 0 200 160">
+      <defs>
+        <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#ef4444"/>
+          <stop offset="30%" stopColor="#f59e0b"/>
+          <stop offset="70%" stopColor="#22c55e"/>
+          <stop offset="100%" stopColor="#16a34a"/>
+        </linearGradient>
+      </defs>
+      <path d="M 30 130 A 70 70 0 1 1 170 130" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="14" strokeLinecap="round"/>
+      <path d="M 30 130 A 70 70 0 1 1 170 130" fill="none" stroke="url(#gaugeGrad)" strokeWidth="14" strokeLinecap="round"
+        strokeDasharray=${arc} strokeDashoffset=${offset} className="gauge-fill"/>
+      <text x="100" y="95" textAnchor="middle" fill="#e2eed9" fontSize="36" fontWeight="700">${value}%</text>
+      <text x="100" y="120" textAnchor="middle" fill="rgba(200,220,200,.6)" fontSize="14" fontWeight="500">${label}</text>
+    </svg>
+  </div>`
+}
+
+// Chart Component (dark themed)
+function Chart({d,color,u=''}){const[i,setI]=useState(null),w=300,h=100,p=6,mx=Math.max(...d),mn=Math.min(...d),x=k=>p+k*(w-2*p)/Math.max(d.length-1,1),y=v=>h-p-(v-mn)/((mx-mn)||1)*(h-2*p-16),pts=d.map((v,k)=>x(k)+','+y(v)).join(' '),sel=i===null?d.length-1:i;
+return html`<svg viewBox=${'0 0 '+w+' '+h} className="w-full touch-none chart-svg" role="img" aria-label="Trend chart" onMouseMove=${e=>{const r=e.currentTarget.getBoundingClientRect();setI(Math.max(0,Math.min(d.length-1,Math.round((e.clientX-r.left)/r.width*(d.length-1)))))}} onMouseLeave=${()=>setI(null)}><polygon points=${p+','+(h-p)+' '+pts+' '+(w-p)+','+(h-p)} fill=${color} opacity=".1"/><polyline points=${pts} fill="none" stroke=${color} strokeWidth="2" strokeLinejoin="round" opacity=".8"/><circle cx=${x(sel)} cy=${y(d[sel])} r="4" fill=${color}/><text x="6" y="11" fontSize="11">${d[sel]+u}</text></svg>`}
+
+// Scan Overview Panel
+function ScanOverview({hist,loc}){
+  const last=hist[0];
+  const scanId='PD'+(Date.now()%1000000).toString().padStart(6,'0')+'-'+Math.floor(Math.random()*9000+1000);
+  const today=new Date();
+  const dateStr=today.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  return html`<div className="glass-dark rounded-2xl p-5 space-y-4 fade-up" style=${{animationDelay:'.2s'}}>
+    <div>
+      <h3 className="serif text-xl font-bold text-emerald-100">Scan Overview</h3>
+      <p className="text-xs text-emerald-400/60 mt-1">${hist.length>0?hist.length+' Active Scan'+(hist.length>1?'s':''):'No scans yet'}</p>
+    </div>
+    <div className="space-y-4">
+      <div className="flex items-start gap-3">
+        <span className="text-lg mt-0.5">🔖</span>
+        <div><p className="text-xs text-emerald-400/50">Scan ID</p><p className="serif font-bold text-emerald-100">${last?scanId:'—'}</p></div>
+      </div>
+      <div className="flex items-start gap-3">
+        <span className="text-lg mt-0.5">📅</span>
+        <div><p className="text-xs text-emerald-400/50">Scan Date</p><p className="serif font-bold text-emerald-100">${dateStr}</p></div>
+      </div>
+      <div className="flex items-start gap-3">
+        <span className="text-lg mt-0.5">🌾</span>
+        <div><p className="text-xs text-emerald-400/50">Field</p><p className="serif font-bold text-emerald-100">${loc.ri!=null?R[loc.ri].n:'Not set'}</p></div>
+      </div>
+      <div className="flex items-start gap-3">
+        <span className="text-lg mt-0.5">🌿</span>
+        <div><p className="text-xs text-emerald-400/50">Growth Stage</p><p className="serif font-bold text-emerald-100">${last?'Vegetative Stage':'—'}</p></div>
+      </div>
+    </div>
+  </div>`
+}
+
+// Crop Distribution mini component
+function CropDistribution(){
+  const crops=[{name:'Corn',pct:36,color:'#22c55e'},{name:'Wheat',pct:30,color:'#4ade80'},{name:'Beans',pct:52.5,color:'#86efac'}];
+  return html`<div className="space-y-3">
+    <h4 className="serif font-bold text-emerald-100 text-sm">Crop Distribution</h4>
+    <p className="text-[10px] text-emerald-400/40">Crop distribution for better yield planning</p>
+    ${crops.map(c=>html`<div key=${c.name} className="flex items-center gap-2">
+      <span className="text-xs text-emerald-300/60 w-12">${c.name}</span>
+      <div className="flex-1 soil-bar"><div className="soil-bar-fill" style=${{width:c.pct+'%',background:c.color}}></div></div>
+      <span className="text-xs text-emerald-300/60 w-10 text-right">${c.pct}%</span>
+    </div>`)}
+  </div>`
+}
+
+// Soil Condition mini component
+function SoilCondition({sens}){
+  const l=sens.last;
+  const nutrients=[{name:'K',val:'Good',color:'#22c55e'},{name:'P',val:'Low',color:'#f59e0b'},{name:'N',val:'Med',color:'#38bdf8'}];
+  return html`<div className="space-y-3">
+    <h4 className="serif font-bold text-emerald-100 text-sm">Soil Condition</h4>
+    <p className="text-[10px] text-emerald-400/40">Know your soil before you plant</p>
+    <div className="flex gap-2 justify-center">
+      ${nutrients.map(n=>html`<div key=${n.name} className="text-center">
+        <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style=${{background:n.color+'22',border:'1px solid '+n.color+'44',color:n.color}}>${n.name}</div>
+        <p className="text-[10px] mt-1 text-emerald-300/50">${n.val}</p>
+      </div>`)}
+    </div>
+    <div>
+      <div className="flex justify-between text-[10px] text-emerald-300/50"><span>Nitrogen</span><span>${(l.ph*12.5).toFixed(0)}%</span></div>
+      <div className="soil-bar mt-1"><div className="soil-bar-fill" style=${{width:(l.ph*12.5)+'%',background:'linear-gradient(90deg,#22c55e,#4ade80)'}}></div></div>
+    </div>
+  </div>`
+}
+
+// Leaf SVG illustration
+function LeafSVG(){
+  return html`<svg viewBox="0 0 200 320" className="w-48 md:w-56 leaf-glow float" style=${{filter:'drop-shadow(0 0 40px rgba(74,222,128,.2))'}}>
+    <defs>
+      <linearGradient id="leafGrad" x1="0" y1="0" x2=".3" y2="1">
+        <stop offset="0%" stopColor="#86efac"/>
+        <stop offset="40%" stopColor="#22c55e"/>
+        <stop offset="100%" stopColor="#15803d"/>
+      </linearGradient>
+    </defs>
+    <path d="M100 15C180 60 190 180 100 280C10 180 20 60 100 15Z" fill="url(#leafGrad)" opacity=".95"/>
+    <path d="M100 35V265" stroke="#166534" strokeWidth="2.5" fill="none" opacity=".5"/>
+    <path d="M100 80L70 115M100 80L130 115M100 130L64 170M100 130L136 170M100 180L70 215M100 180L130 215" stroke="#166534" strokeWidth="1.8" fill="none" opacity=".35" strokeLinecap="round"/>
+  </svg>`
+}
+
+// Tool Icons Ring
+function ToolRing(){
+  const tools=[
+    {icon:'🔬',label:'Microscope',angle:0},
+    {icon:'🌡️',label:'Sensors',angle:45},
+    {icon:'🚁',label:'Drone',angle:90},
+    {icon:'💧',label:'Irrigation',angle:135},
+    {icon:'🧪',label:'Lab Test',angle:180},
+    {icon:'📊',label:'Analytics',angle:225},
+    {icon:'🛰️',label:'Satellite',angle:270},
+    {icon:'🤖',label:'AI Engine',angle:315}
+  ];
+  const r=145;
+  return html`<div className="relative" style=${{width:'300px',height:'300px'}}>
+    ${tools.map(t=>{
+      const rad=(t.angle-90)*Math.PI/180;
+      const x=150+r*Math.cos(rad)-20;
+      const y=150+r*Math.sin(rad)-20;
+      return html`<div key=${t.label} className="tool-icon" style=${{left:x+'px',top:y+'px',position:'absolute'}}>
+        <span>${t.icon}</span>
+        <span className="tooltip-text">${t.label}</span>
+      </div>`
+    })}
+  </div>`
+}
+
+// Leaf thumbnails component
+function LeafThumbnails({onSelect,selected}){
+  const leaves=[
+    {id:1,color:'#a3e635',emoji:'🍃',name:'Healthy'},
+    {id:2,color:'#22c55e',emoji:'🌿',name:'Fresh'},
+    {id:3,color:'#15803d',emoji:'🍀',name:'Mature'},
+    {id:4,color:'#166534',emoji:'🌱',name:'Young'},
+  ];
+  return html`<div className="flex items-center gap-3 justify-center mt-6 flex-wrap">
+    ${leaves.map(l=>html`<div key=${l.id} onClick=${()=>onSelect&&onSelect(l.id)}
+      className=${'leaf-thumb flex items-center justify-center text-2xl '+(selected===l.id?'active':'')}
+      style=${{background:l.color+'20'}}>
+      ${l.emoji}
+    </div>`)}
+    <div className="leaf-thumb flex items-center justify-center text-xl cursor-pointer" style=${{background:'rgba(255,255,255,.05)'}}
+      onClick=${()=>onSelect&&onSelect(0)}>+</div>
+    <span className="text-xs text-emerald-400/40 ml-1">Add More</span>
+  </div>`
+}
+
+// Map picker
+function MapPick({pos,onPick}){const ref=useRef(),m=useRef(),mk=useRef();
+useEffect(()=>{const map=L.map(ref.current,{zoomAnimation:false,fadeAnimation:false,markerZoomAnimation:false}).setView(pos||[22.5,79],pos?10:5);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);map.on('click',e=>onPick([e.latlng.lat,e.latlng.lng]));m.current=map;return()=>map.remove()},[]);
+useEffect(()=>{if(!pos||!m.current)return;if(mk.current)mk.current.setLatLng(pos);else mk.current=L.circleMarker(pos,{radius:9,color:'#4ade80',weight:3,fillColor:'#047857',fillOpacity:1}).addTo(m.current);m.current.setView(pos,Math.max(m.current.getZoom(),9))},[pos&&pos.join()]);
+return html`<div ref=${ref} className="h-72 sm:h-96 rounded-2xl overflow-hidden border border-emerald-800/30"></div>`}
+
+// Weather display
+function Wx({w,loc}){
+  if(w.s==='idle')return html`<p className="text-sm text-emerald-400/50">Set your farm on a map or with GPS in <a className="underline text-emerald-400" href="#soil">Soil Intelligence</a> to get a forecast.</p>`;
+  if(w.s==='load')return html`<p className="text-sm text-emerald-400/50 pulse-soft">Loading forecast…</p>`;
+  if(w.s==='err')return html`<${Note} k="warn">Forecast unavailable. Check internet connection.<//>`;
+  const j=w.j,d=j.daily;
+  return html`<div>
+    <p className="serif text-3xl font-bold text-emerald-100">${Math.round(j.current.temperature_2m)}°C <span className="text-sm font-normal text-emerald-400/50">humidity ${j.current.relative_humidity_2m}%</span></p>
+    <div className="mt-3 divide-y divide-emerald-800/20 text-sm">
+      ${d.time.map((x,i)=>html`<div key=${x} className="flex justify-between py-2 text-emerald-300/70">
+        <span>${new Date(x).toLocaleDateString([],{weekday:'short'})}</span>
+        <span>${Math.round(d.temperature_2m_min[i])}–${Math.round(d.temperature_2m_max[i])}°C</span>
+        <span className="text-sky-400">${d.precipitation_sum[i]} mm</span>
+      </div>`)}
+    </div>
+  </div>`
+}
+
+// ===== PAGE COMPONENTS =====
+
+// HOME PAGE - Main landing with the AgrixAI design
+function Home({loc,hist,sens,setHist,log}){
+  const[selLeaf,setSelLeaf]=useState(1);
+  const healthScore=hist.length>0?(hist.filter(h=>h.healthy).length/hist.length*100).toFixed(0):92;
+  const healthLabel=healthScore>=80?'Excellent':healthScore>=60?'Good':healthScore>=40?'Fair':'Poor';
+  const lastDiseases=hist.filter(h=>!h.healthy).slice(0,2);
+  const recommendations=[
+    {title:'Maintain Plant Spacing',desc:'Good air circulation reduces disease risk.'},
+    {title:'Remove Affected Leaves',desc:'Prevent the spread to healthy plants.'},
+    {title:'Use Disease Resistant Varieties',desc:'Choose resistant varieties for long-term control.'}
+  ];
+
+  return html`<div className="space-y-6 fade-up">
+    <!-- Page header -->
+    <div className="flex items-start justify-between flex-wrap gap-4">
+      <div>
+        <h1 className="serif text-3xl md:text-4xl font-bold text-emerald-100">${t('detect')}</h1>
+        <div className="flex items-center gap-4 mt-2 text-sm text-emerald-400/50">
+          <span>📍 ${loc.ri!=null?R[loc.ri].st.split(',')[0]:'Set location'}</span>
+          <span>📅 ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</span>
+          <span>🕐 ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+        </div>
+      </div>
+      ${loc.ll?html`<span className="text-xs text-emerald-400/40">${loc.ll[0].toFixed(4)}°, ${loc.ll[1].toFixed(4)}°</span>`:null}
+    </div>
+
+    <!-- Main 3-column layout -->
+    <div className="grid lg:grid-cols-12 gap-5">
+      <!-- LEFT COLUMN -->
+      <div className="lg:col-span-3 space-y-4">
+        <!-- Health Status Card -->
+        <${Card} c="space-y-3">
+          <div>
+            <h3 className="serif text-lg font-bold text-emerald-100">Health Status</h3>
+            <p className="text-xs text-emerald-400/40">Total lifecycle scenario</p>
+          </div>
+          <${HealthGauge} value=${Number(healthScore)} label=${healthLabel}/>
+          <div className="flex gap-2 justify-center flex-wrap">
+            ${lastDiseases.length>0?lastDiseases.map((d,i)=>html`<span key=${i} className="tag tag-red">✕ ${d.name}</span>`):
+              html`<span className="tag tag-green">✓ No Issues</span>`}
+            ${hist.some(h=>h.healthy)?html`<span className="tag tag-green">✓ Healthy</span>`:null}
+          </div>
+          <div className="flex justify-center gap-4 text-xs text-emerald-400/50">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-500"></span> Healthy</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-500"></span> Moderate</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-red-500"></span> Unhealthy</span>
+          </div>
+        <//>
+
+        <!-- Recommendations -->
+        <div className="space-y-1">
+          ${recommendations.map((r,i)=>html`<div key=${i} className="rec-item">
+            <div className="rec-dot"></div>
+            <div>
+              <h4 className="font-bold text-sm text-emerald-100">${r.title}</h4>
+              <p className="text-xs text-emerald-400/40 mt-0.5">${r.desc}</p>
+            </div>
+          </div>`)}
+        </div>
+      </div>
+
+      <!-- CENTER COLUMN -->
+      <div className="lg:col-span-5 flex flex-col items-center justify-center relative" style=${{minHeight:'400px'}}>
+        <div className="relative">
+          <${ToolRing}/>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <${LeafSVG}/>
+          </div>
+        </div>
+        <${LeafThumbnails} selected=${selLeaf} onSelect=${setSelLeaf}/>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div className="lg:col-span-4 space-y-4">
+        <${ScanOverview} hist=${hist} loc=${loc}/>
+
+        <!-- Crop Distribution & Soil Condition -->
+        <div className="grid grid-cols-2 gap-3">
+          <${Card} c="!p-4">
+            <${CropDistribution}/>
+          <//>
+          <${Card} c="!p-4">
+            <${SoilCondition} sens=${sens}/>
+          <//>
+        </div>
+      </div>
+    </div>
+  </div>`
+}
+
+// DASHBOARD
+function Dash({hist,act,sens,w,loc}){const l=sens.last,last=hist[0],al=alertsOf(l),dis=hist.filter(h=>!h.healthy).slice(0,2);
+return html`<div className="space-y-5 fade-up">
+  <${H}>${t('dash')}<//>
+  <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+    <${Card} c="col-span-2 lg:col-span-1">
+      <p className="text-sm text-emerald-400/50">🌱 ${t('health')}</p>
+      ${last?html`<p className=${'serif text-xl font-bold mt-1 '+(last.healthy?'text-emerald-400':'text-red-400')}>${last.healthy?'Healthy':last.name}</p>
+        <p className="text-xs text-emerald-400/40">${last.crop}, last scan</p>`:
+        html`<p className="serif text-xl font-bold mt-1 text-emerald-600">No scan yet</p>
+          <a href="#detect" className="text-sm text-emerald-400 underline">Scan a leaf</a>`}
+    <//>
+    ${M.slice(0,4).map(m=>html`<${Card} key=${m[0]}>
+      <div className="flex justify-between items-start">
+        <p className="text-sm text-emerald-400/50">${m[1]} ${t(m[2])}</p>
+        ${!sens.live&&html`<${Demo}/>`}
+      </div>
+      <p className="serif text-3xl font-bold mt-1 text-emerald-100">${l[m[0]]}<span className="text-base text-emerald-400/40">${m[3]}</span></p>
+    <//>`)}
+  </div>
+  <div className="grid lg:grid-cols-3 gap-4">
+    <${Card} c="lg:col-span-2">
+      <div className="flex justify-between">
+        <h3 className="font-semibold text-emerald-200">${t('moist')} & ${t('temp').toLowerCase()}, last 24</h3>
+        ${!sens.live&&html`<${Demo}/>`}
+      </div>
+      <div className="grid sm:grid-cols-2 gap-4 mt-2">
+        <${Chart} d=${sens.s.map(x=>x.m)} color="#22c55e" u="%"/>
+        <${Chart} d=${sens.s.map(x=>x.t)} color="#f59e0b" u="°C"/>
+      </div>
+    <//>
+    <${Card}><h3 className="font-semibold text-emerald-200 mb-2">${t('weather')}</h3><${Wx} w=${w} loc=${loc}/><//>
+  </div>
+  <div className="grid md:grid-cols-2 gap-4">
+    <${Card}><h3 className="font-semibold text-emerald-200 mb-2">${t('alerts')}</h3>
+      <div className="space-y-2">
+        ${dis.map(d=>html`<${Note} k="bad" key=${d.when}>Disease: ${d.crop} — ${d.name}<//>`)}
+        ${al.map(a=>html`<${Note} k=${a[0]} key=${a[1]}>${a[1]}${!sens.live&&' (demo)'}<//>`)}
+        ${!al.length&&!dis.length&&html`<p className="text-sm text-emerald-400/40">No active alerts.</p>`}
+      </div>
+    <//>
+    <${Card}><h3 className="font-semibold text-emerald-200 mb-2">${t('recent')}</h3>
+      <ul className="space-y-2 text-sm">
+        ${act.map((a,i)=>html`<li key=${i} className="flex gap-3">
+          <span className="text-emerald-600 w-12 shrink-0">${a.t}</span>
+          <span className="text-emerald-300/70">${a.m}</span>
+        </li>`)}
+      </ul>
+    <//>
+  </div>
+</div>`}
+
+// SOIL INTELLIGENCE
+function Soil({loc,setLoc,sens,log}){const[busy,setBusy]=useState(false),[err,setErr]=useState(''),[f,setF]=useState({village:'',district:'',state:'',pin:''}),r=loc.ri!=null?R[loc.ri]:null;
+const pick=(ll,src)=>{if(ll[0]<6||ll[0]>37.5||ll[1]<68||ll[1]>98){setErr('That point is outside India.');return}setErr('');setLoc({ll,ri:near(ll),src});log('Farm location set by '+src)};
+const gps=()=>{if(!navigator.geolocation){setErr('GPS unavailable.');return}setBusy(true);navigator.geolocation.getCurrentPosition(p=>{setBusy(false);pick([p.coords.latitude,p.coords.longitude],'GPS')},e=>{setBusy(false);setErr(e.code===1?'Location permission denied.':'Could not get location.')},{timeout:10000,enableHighAccuracy:true})};
+const save=e=>{e.preventDefault();if(!f.state){setErr('Please choose a state.');return}if(f.pin&&!/^[1-9][0-9]{5}$/.test(f.pin)){setErr('PIN code must be 6 digits.');return}setErr('');setLoc({ri:SM[f.state],ll:null,src:'manual entry',...f});log('Farm details saved')};
+const rg=r&&r.ph.split('–').map(Number),pv=sens.last.ph;
+return html`<div className="space-y-5 fade-up"><${H}>${t('soil')}<//>
+<div className="grid lg:grid-cols-2 gap-5"><div className="space-y-4">
+  <${Card} c="space-y-4">
+    <button onClick=${gps} disabled=${busy} className="btn-primary w-full">📍 ${busy?'Finding you…':t('gps')}</button>
+    <form onSubmit=${save} className="grid grid-cols-2 gap-3">
+      <label className="text-sm text-emerald-300/70">${t('village')}<input className="dark-input w-full mt-1" value=${f.village} onInput=${e=>setF({...f,village:e.target.value})}/></label>
+      <label className="text-sm text-emerald-300/70">${t('district')}<input className="dark-input w-full mt-1" value=${f.district} onInput=${e=>setF({...f,district:e.target.value})}/></label>
+      <label className="text-sm text-emerald-300/70">${t('state')}<select className="dark-input w-full mt-1" value=${f.state} onChange=${e=>setF({...f,state:e.target.value})}><option value="">Select state</option>${Object.keys(SM).sort().map(s=>html`<option key=${s}>${s}</option>`)}</select></label>
+      <label className="text-sm text-emerald-300/70">${t('pin')}<input className="dark-input w-full mt-1" inputMode="numeric" maxLength="6" value=${f.pin} onInput=${e=>setF({...f,pin:e.target.value})}/></label>
+      <button className="col-span-2 btn-outline">${t('apply')}</button>
+    </form>
+  <//>
+  ${err&&html`<${Note} k="bad">${err}<//>`}
+  <${MapPick} pos=${loc.ll} onPick=${ll=>pick(ll,'map')}/>
+  <p className="text-xs text-emerald-400/30">Tap the map to place your farm.</p>
+</div>
+<div>${r?html`<${Card} c="space-y-3">
+  <div className="flex justify-between items-start gap-2">
+    <div><h3 className="serif text-xl font-bold text-emerald-100">${r.n}</h3><p className="text-sm text-emerald-400/40">${r.st}</p></div>
+    <span className="text-[11px] font-bold bg-amber-900/30 text-amber-400 border border-amber-700/40 rounded-full px-2 py-0.5">${t('est')}</span>
+  </div>
+  ${[['Soil types',r.s],['Typical pH',r.ph],['Fertility',r.f],['Climate',r.cl],['Common crops',r.cr]].map(x=>html`<p key=${x[0]} className="text-sm text-emerald-300/70"><b className="text-emerald-200">${x[0]}:</b> ${x[1]}</p>`)}
+  <div><p className="text-sm font-semibold text-emerald-200">Suggested crops</p><p className="text-sm text-emerald-300/70 mt-1">Kharif: ${r.k.join(', ')}</p><p className="text-sm text-emerald-300/70">Rabi: ${r.r.join(', ')}</p></div>
+  <div className="note note-info"><p className="font-semibold">Sensor vs Regional ${!sens.live&&html`<${Demo}/>`}</p><p>pH measured ${pv} · regional ${r.ph}: ${pv<rg[0]?'below range, liming may help':pv>rg[1]?'above range':'within range'}.</p></div>
+<//>
+<div className="mt-3"><${Note} k="warn">Regional estimate only. For exact advice, get a Soil Health Card test.<//>
+</div>`:html`<${Card}><p className="text-emerald-400/50">Choose your farm location to see regional soil data.</p><//>`}</div></div></div>`}
+
+// DETECT DISEASE
+function Detect({setHist,log}){const[crop,setCrop]=useState('Tomato'),[file,setFile]=useState(null),[url,setUrl]=useState(''),[st,setSt]=useState('idle'),[res,setRes]=useState(null),[err,setErr]=useState('');
+const on=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;if(!f.type.startsWith('image/')){setErr('Please choose an image file.');return}if(f.size>8e6){setErr('Image over 8 MB.');return}setErr('');setRes(null);setSt('idle');setFile(f);setUrl(u=>{u&&URL.revokeObjectURL(u);return URL.createObjectURL(f)})};
+const run=async()=>{setSt('load');setErr('');setRes(null);try{const j=await predict(file,crop),h=/healthy/i.test(j.label),r={name:h?'Healthy':pretty(j.label),healthy:h,conf:j.confidence,kb:h?KB.healthy:KB[norm(j.label)]};setRes(r);setSt('ok');setHist(a=>[{when:new Date().toLocaleString(),crop,name:r.name,conf:r.conf,healthy:h},...a]);log('Scan: '+crop+', '+r.name)}catch(e){setSt('err');setErr('CNN model service not reachable. Connect your Flask/FastAPI endpoint at '+API+'/predict')}};
+const demo=()=>{setRes({name:'Late blight',healthy:false,conf:.87,kb:KB['tomato late blight'],demo:1});setSt('ok')};
+return html`<div className="space-y-5 fade-up"><${H}>${t('detect')}<//>
+<div className="grid lg:grid-cols-2 gap-5">
+  <${Card} c="space-y-4">
+    <label className="text-sm text-emerald-300/70 block">${t('crop')}<select className="dark-input w-full mt-1" value=${crop} onChange=${e=>setCrop(e.target.value)}>${['Tomato','Potato','Maize','Pepper'].map(c=>html`<option key=${c}>${c}</option>`)}</select></label>
+    <div className="flex flex-wrap gap-2">
+      <label className="btn-primary cursor-pointer"><input type="file" accept="image/*" className="sr-only" onChange=${on}/>🖼️ ${t('upload')}</label>
+      <label className="btn-outline cursor-pointer"><input type="file" accept="image/*" capture="environment" className="sr-only" onChange=${on}/>📷 ${t('camera')}</label>
+    </div>
+    ${url?html`<img src=${url} alt="Selected leaf" className="rounded-xl max-h-72 w-full object-contain" style=${{background:'rgba(10,30,18,.5)'}}/>`
+    :html`<div className="rounded-xl border-2 border-dashed border-emerald-800/40 p-8 text-center text-sm text-emerald-400/50" style=${{background:'rgba(10,30,18,.3)'}}>Use a clear, well-lit photo of one leaf against a plain background.</div>`}
+    <button onClick=${run} disabled=${!file||st==='load'} className="btn-gold w-full py-3">${st==='load'?'Analysing…':'🔬 '+t('analyse')}</button>
+  <//>
+  <div className="space-y-3">
+    ${err&&html`<${Note} k=${st==='err'?'warn':'bad'}>${err}<//>`}
+    ${st==='err'&&html`<button onClick=${demo} className="text-sm underline text-emerald-400">Preview with sample data</button>`}
+    ${res?html`<${Card} c="space-y-3">
+      ${res.demo&&html`<${Note} k="warn"><b>DEMO:</b> sample layout only.<//>`}
+      <div className="flex justify-between items-start gap-2">
+        <div><p className="text-sm text-emerald-400/40">${crop}</p><h3 className=${'serif text-2xl font-bold '+(res.healthy?'text-emerald-400':'text-red-400')}>${res.name}</h3></div>
+        <span className=${'tag '+(res.healthy?'tag-green':'tag-red')}>${res.healthy?'Healthy':'Infected'}</span>
+      </div>
+      <div><p className="text-sm text-emerald-300/70">Confidence ${Math.round(res.conf*100)}%</p>
+        <div className="h-2 rounded-full mt-1" style=${{background:'rgba(255,255,255,.08)'}}>
+          <div className="h-2 rounded-full" style=${{width:Math.round(res.conf*100)+'%',background:res.healthy?'#22c55e':'#ef4444'}}></div>
+        </div>
+      </div>
+      ${res.conf<.6&&html`<${Note} k="warn">Low confidence. Try better lighting.<//>`}
+      ${res.kb?html`<div className="text-sm space-y-2 text-emerald-300/70">
+        <p><b className="text-emerald-200">Severity:</b> ${res.kb[0]}</p>
+        <p><b className="text-emerald-200">Symptoms:</b> ${res.kb[1]}</p>
+        <div><b className="text-emerald-200">Prevention</b><ul className="list-disc pl-5 mt-1">${res.kb[2].split('; ').map(x=>html`<li key=${x}>${x}</li>`)}</ul></div>
+      </div>`:html`<${Note}>No guidance stored for this class yet.<//>`}
+    <//>`:st!=='err'&&html`<${Card}><p className="text-emerald-400/50 text-sm">Results appear here with disease name, confidence, severity, symptoms and prevention.</p><//>`}
+  </div>
+</div></div>`}
+
+// IOT MONITOR
+function IoT({sens}){const l=sens.last,al=alertsOf(l),D=[['Soil moisture sensor','Capacitive probe'],['DHT22','Temperature and humidity'],['Soil pH sensor','Analog probe'],['Light sensor','LDR or BH1750'],['ESP32-CAM','Leaf photos over Wi-Fi']];
+return html`<div className="space-y-5 fade-up">
+  <div className="flex items-center gap-3 flex-wrap">
+    <${H}>${t('iot')}<//>
+    ${sens.live?html`<span className="tag tag-green pulse-soft">● LIVE</span>`:html`<${Demo}/>`}
+  </div>
+  ${!sens.live&&html`<${Note} k="warn">No hardware connected. All readings are simulated demo data.<//>`}
+  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    ${M.map(m=>html`<${Card} key=${m[0]}>
+      <p className="text-sm text-emerald-400/50">${m[1]} ${t(m[2])} <span className="text-emerald-600">24 readings</span></p>
+      <p className="serif text-2xl font-bold text-emerald-100 mt-1">${l[m[0]]}${m[3]}</p>
+      <${Chart} d=${sens.s.map(x=>x[m[0]])} color=${m[4]} u=${m[3]}/>
+    <//>`)}
+  </div>
+  <div className="grid md:grid-cols-2 gap-4">
+    <${Card}><h3 className="font-semibold text-emerald-200 mb-2">Devices</h3>
+      <ul className="divide-y divide-emerald-800/20 text-sm">
+        ${D.map(d=>html`<li key=${d[0]} className="flex justify-between py-2">
+          <span className="text-emerald-300/70">${d[0]}<span className="block text-xs text-emerald-400/30">${d[1]}</span></span>
+          <span className=${sens.live?'text-emerald-400':'text-emerald-600'}>${sens.live?'● Online':'○ Offline'}</span>
+        </li>`)}
+      </ul>
+    <//>
+    <${Card}><h3 className="font-semibold text-emerald-200 mb-2">${t('alerts')}</h3>
+      <div className="space-y-2">
+        ${al.map(a=>html`<${Note} k=${a[0]} key=${a[1]}>${a[1]}<//>`)}
+        ${!al.length&&html`<p className="text-sm text-emerald-400/40">No active alerts.</p>`}
+      </div>
+      <h3 className="font-semibold text-emerald-200 mt-4 mb-1">Connect ESP32</h3>
+      <p className="text-xs text-emerald-400/40">Polls GET ${API}/sensors/latest every 5s.</p>
+      <pre className="text-xs rounded-lg p-3 mt-2 overflow-x-auto" style=${{background:'rgba(10,30,18,.6)',color:'#4ade80',border:'1px solid rgba(74,222,128,.15)'}}>{"m":48,"t":29.4,"h":63,"ph":6.8,"l":72}</pre>
+    <//>
+  </div>
+</div>`}
+
+// REPORTS & PROFILE
+function Profile({loc,hist,sens}){const[P,setP]=useState(()=>{try{return JSON.parse(localStorage.getItem('agro-profile'))||{}}catch(e){return{}}}),[rep,setRep]=useState('');
+const up=(k,v)=>{const n={...P,[k]:v};setP(n);try{localStorage.setItem('agro-profile',JSON.stringify(n))}catch(e){}};
+const mk=()=>{const r=loc.ri!=null?R[loc.ri]:null,av=k=>(sens.s.reduce((a,x)=>a+x[k],0)/sens.s.length).toFixed(1);setRep(['AGRIXAI FARM REPORT','Generated: '+new Date().toLocaleString(),'','FARMER','Name: '+(P.name||'-')+' | Farm size: '+(P.acres||'-')+' acres | Crops: '+(P.crops||'-'),'','LOCATION','Source: '+(loc.src||'not set')+(loc.ll?' | '+loc.ll.map(x=>x.toFixed(4)).join(', '):''),'','SOIL (REGIONAL ESTIMATE)',r?r.n+': '+r.s+'; pH '+r.ph:'Not set','','SENSORS ('+(sens.live?'LIVE':'DEMO')+')','Moisture '+av('m')+'% | Temp '+av('t')+'°C | Humidity '+av('h')+'% | pH '+av('ph'),'','SCANS',...(hist.length?hist.map(h=>h.when+' | '+h.crop+' | '+h.name+' | '+Math.round(h.conf*100)+'%'):['None'])].join('\n'))};
+const dl=()=>{try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rep],{type:'text/plain'}));a.download='agrixai-report.txt';a.click()}catch(e){}};
+return html`<div className="space-y-5 fade-up"><${H}>${t('profile')}<//>
+<div className="grid lg:grid-cols-2 gap-5">
+  <${Card} c="space-y-3">
+    <h3 className="font-semibold text-emerald-200">Farmer Details</h3>
+    ${[['name','Name'],['acres','Farm size (acres)'],['crops','Main crops']].map(x=>html`<label key=${x[0]} className="text-sm text-emerald-300/70 block">${x[1]}<input className="dark-input w-full mt-1" value=${P[x[0]]||''} onInput=${e=>up(x[0],e.target.value)}/></label>`)}
+    <p className="text-xs text-emerald-400/30">Saved in browser only.</p>
+  <//>
+  <${Card} c="space-y-3">
+    <h3 className="font-semibold text-emerald-200">Detection History</h3>
+    ${hist.length?html`<ul className="text-sm divide-y divide-emerald-800/20">
+      ${hist.map((h,i)=>html`<li key=${i} className="py-2 text-emerald-300/70">${h.crop}: <b className=${h.healthy?'text-emerald-400':'text-red-400'}>${h.name}</b> (${Math.round(h.conf*100)}%) <span className="text-emerald-600 text-xs">${h.when}</span></li>`)}
+    </ul>`:html`<p className="text-sm text-emerald-400/40">No scans yet.</p>`}
+    <div className="flex gap-2 pt-2">
+      <button onClick=${mk} className="btn-primary">Create Report</button>
+      ${rep&&html`<button onClick=${dl} className="btn-outline">Download .txt</button>`}
+    </div>
+  <//>
+</div>
+${rep&&html`<${Card}><pre className="text-xs whitespace-pre-wrap overflow-x-auto text-emerald-300/70">${rep}</pre><//>`}
+</div>`}
+
+// Error Boundary
+class EB extends React.Component{state={e:0};static getDerivedStateFromError(){return{e:1}}render(){return this.state.e?html`<div className="p-6"><${Note} k="bad">Something went wrong. <a className="underline text-emerald-400" href="#home" onClick=${()=>setTimeout(()=>location.reload(),50)}>Return home</a>.<//></div>`:this.props.children}}
+
+// Navigation configuration
+const NAV=[['home','🏠','home'],['dashboard','📊','dash'],['soil','🗺️','soil'],['detect','🍃','detect'],['iot','📡','iot'],['profile','📄','profile']];
+const TOP_NAV=[['dashboard','dash'],['soil','crop_mgmt'],['profile','crop_report'],['iot','equip'],['detect','detect']];
+
+// MAIN APP
+function App(){
+  const[lang,setLang]=useState('en');LANG=lang;
+  const gr=()=>(location.hash||'#home').slice(1),[route,setRoute]=useState(gr()),[loc,setLoc]=useState({ri:null,ll:null}),[hist,setHist]=useState([]),[act,setAct]=useState([{t:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),m:'Welcome to AgrixAI. Sensor values are demo data until hardware connects.'}]),sens=useSensors(),w=useWeather(loc.ll);
+  useEffect(()=>{const f=()=>setRoute(gr());addEventListener('hashchange',f);return()=>removeEventListener('hashchange',f)},[]);
+  const log=m=>setAct(a=>[{m,t:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})},...a].slice(0,6));
+  const Pg={home:Home,dashboard:Dash,soil:Soil,detect:Detect,iot:IoT,profile:Profile}[route]||Home,p={loc,setLoc,hist,setHist,act,log,sens,w};
+
+  return html`<div className="min-h-screen relative">
+    <!-- Background -->
+    <div className="farm-bg">
+      <div className="mist"><div className="mist-layer"></div></div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <header className="sticky top-0 z-50 px-4 md:px-6 py-3 desktop-nav" style=${{display:'flex'}}>
+      <div className="w-full glass rounded-2xl px-5 py-3 flex items-center justify-between">
+        <!-- Logo -->
+        <a href="#home" className="flex items-center gap-2 shrink-0">
+          <span className="text-2xl">🌿</span>
+          <span className="serif text-xl font-bold text-emerald-100">Agrix<span className="gold">AI</span></span>
+        </a>
+
+        <!-- Center nav links -->
+        <nav className="hidden md:flex items-center gap-1">
+          <a href="#home" className="nav-link">🔍</a>
+          ${TOP_NAV.map(n=>html`<a key=${n[0]} href=${'#'+n[0]}
+            className=${'nav-link '+(route===n[0]?'nav-active':'')}>
+            ${t(n[1])}
+          </a>`)}
+        </nav>
+
+        <!-- Right side -->
+        <div className="flex items-center gap-3">
+          <!-- Language toggle -->
+          <div className="flex rounded-full overflow-hidden" style=${{background:'rgba(10,30,18,.5)',border:'1px solid rgba(100,180,120,.15)'}}>
+            ${[['en','EN'],['hi','हिं']].map(x=>html`<button key=${x[0]} onClick=${()=>setLang(x[0])}
+              className=${'px-3 py-1.5 text-xs font-semibold transition-all '+(lang===x[0]?'gold-bg text-emerald-950':'text-emerald-400/50 hover:text-emerald-300')}>
+              ${x[1]}
+            </button>`)}
+          </div>
+          <!-- Add button -->
+          <button className="w-9 h-9 rounded-full gold-bg flex items-center justify-center text-emerald-950 font-bold text-lg hover:scale-105 transition">+</button>
+          <!-- Notification -->
+          <button className="w-9 h-9 rounded-full flex items-center justify-center text-emerald-400/50 hover:text-emerald-300 transition" style=${{background:'rgba(10,30,18,.5)',border:'1px solid rgba(100,180,120,.15)'}}>🔔</button>
+          <!-- Profile -->
+          <a href="#profile" className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold" style=${{background:'linear-gradient(135deg,#c4a94d,#dbb84e)',color:'#1a2f1e'}}>A</div>
+            <div className="hidden lg:block"><p className="text-sm font-semibold text-emerald-100">Farm User</p><p className="text-[10px] text-emerald-400/40">Farm Manager</p></div>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main className="relative z-10 px-4 md:px-6 pb-28 md:pb-10 max-w-[1400px] mx-auto" style=${{paddingTop:'8px'}}>
+      <${EB} key=${route}><${Pg} ...${p}/><//>
+    </main>
+
+    <!-- Mobile bottom nav -->
+    <nav className="mobile-nav fixed bottom-0 inset-x-0 z-50 glass rounded-t-2xl grid-cols-6"
+      style=${{paddingBottom:'env(safe-area-inset-bottom,0px)',display:'none'}}>
+      ${NAV.map(n=>html`<a key=${n[0]} href=${'#'+n[0]}
+        className=${'flex flex-col items-center py-2.5 text-[10px] transition-all '+(route===n[0]?'text-emerald-400 font-bold':'text-emerald-600')}>
+        <span className="text-lg">${n[1]}</span>
+        <span className="truncate max-w-full px-0.5">${t(n[2])}</span>
+      </a>`)}
+    </nav>
+  </div>`
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${EB}><${App}/><//>`);
+</script></body></html>
