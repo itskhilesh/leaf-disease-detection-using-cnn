@@ -113,3 +113,10 @@ def predict_disease(image, top_k=3):
     }
 
     return result
+
+def get_model_status():
+    return {
+        "model_loaded": model is not None,
+        "total_classes": len(class_names),
+        "input_size": "224x224"
+    }
