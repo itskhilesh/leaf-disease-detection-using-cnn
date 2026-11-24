@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 
+import keras
 import numpy as np
 import tensorflow as tf
 from PIL import Image
@@ -18,13 +19,35 @@ CLASS_NAMES_PATH = BASE_DIR / "Model" / "class_names.json"
 IMAGE_SIZE = (224, 224)
 
 
+def _load_cnn_model(path):
+    """Load the Keras model, handling newer Dense configs (quantization_config)."""
+    try:
+        return tf.keras.models.load_model(path)
+    except (ValueError, TypeError) as exc:
+        if "quantization_config" not in str(exc):
+            raise
+        orig_from_config = keras.layers.Dense.from_config
+
+        @classmethod
+        def _compat_from_config(cls, config):
+            if isinstance(config, dict) and "quantization_config" in config:
+                config = {k: v for k, v in config.items() if k != "quantization_config"}
+            return orig_from_config.__func__(cls, config)
+
+        keras.layers.Dense.from_config = _compat_from_config
+        try:
+            return tf.keras.models.load_model(path, compile=False)
+        finally:
+            keras.layers.Dense.from_config = orig_from_config
+
+
 # ==========================================
 # LOAD MODEL & CLASS NAMES
 # ==========================================
 
 print("Loading plant disease CNN model...")
 
-model = tf.keras.models.load_model(MODEL_PATH)
+model = _load_cnn_model(MODEL_PATH)
 
 with open(CLASS_NAMES_PATH, "r", encoding="utf-8") as file:
     class_names = json.load(file)
