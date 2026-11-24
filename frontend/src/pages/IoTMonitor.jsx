@@ -101,9 +101,9 @@ export default function IoTMonitor({ lang, sensors }) {
           </h3>
           <p className="soft-text" style={{ fontSize: '0.82rem', margin: '0.35rem 0 0' }}>
             This dashboard polls <code>GET {API}/sensors/latest</code> every 5 seconds.
-            Post JSON readings matching:
+            Post JSON readings to <code>POST {API}/sensors</code> matching:
           </p>
-          <pre className="esp-code-block">{`{"m": 48, "t": 29.4, "h": 63, "ph": 6.8, "l": 72}`}</pre>
+          <pre className="esp-code-block">{`{\n  "temperature": 29.4,\n  "humidity": 63,\n  "soil_moisture": 48,\n  "soil_temperature": 24.5\n}`}</pre>
         </article>
       </div>
     </div>

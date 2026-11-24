@@ -237,6 +237,7 @@ export async function predict(file, crop) {
       healthy: Boolean(p.is_healthy),
       confidence: Math.max(0, Math.min(1, conf)),
       rawLabel,
+      diseaseProfile: json.disease_profile || null,
       topPredictions: (p.top_predictions || []).map((tp) => ({
         crop: tp.crop,
         disease: tp.disease,
