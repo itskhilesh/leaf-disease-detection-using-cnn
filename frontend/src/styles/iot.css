@@ -1,0 +1,84 @@
+.iot-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.iot-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.iot-sensors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.iot-sensor-value {
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  font-weight: 800;
+  margin: 0.25rem 0 0.65rem;
+  color: var(--emerald-950);
+}
+
+.iot-bottom-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .iot-bottom-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.device-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.device-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-top: 1px solid rgba(6, 78, 59, 0.1);
+  font-size: 0.92rem;
+}
+
+.device-row:first-child {
+  border-top: none;
+}
+
+.device-sub {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
+.device-status-on {
+  color: var(--emerald-700);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.device-status-off {
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+
+.esp-code-block {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  background: var(--emerald-950);
+  color: var(--emerald-100);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  margin: 0.65rem 0 0;
+  overflow-x: auto;
+}

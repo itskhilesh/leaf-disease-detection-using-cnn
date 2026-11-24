@@ -1,0 +1,199 @@
+.dash-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.dash-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+@media (min-width: 1024px) {
+  .dash-metrics-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.metric-health-card {
+  grid-column: span 2;
+}
+
+@media (min-width: 1024px) {
+  .metric-health-card {
+    grid-column: span 1;
+  }
+}
+
+.metric-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.metric-label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.metric-value {
+  margin: 0.4rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--emerald-950);
+  line-height: 1.1;
+}
+
+.metric-unit {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  margin-left: 0.15rem;
+}
+
+.health-val-ok {
+  color: var(--emerald-700);
+}
+
+.health-val-bad {
+  color: var(--danger-700);
+}
+
+.health-val-empty {
+  color: var(--text-soft);
+}
+
+.dash-main-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .dash-main-grid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.charts-dual {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .charts-dual {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.chart-box {
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+}
+
+.chart-svg {
+  width: 100%;
+  display: block;
+  touch-action: none;
+  overflow: visible;
+}
+
+.dash-bottom-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .dash-bottom-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.card-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--emerald-950);
+}
+
+.alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.activity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+}
+
+.activity-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.activity-time {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  width: 3.2rem;
+  flex-shrink: 0;
+}
+
+/* Weather Widget */
+.weather-temp {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0;
+  color: var(--emerald-950);
+}
+
+.weather-hum {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-soft);
+}
+
+.weather-days {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.weather-day-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.45rem 0;
+  border-top: 1px solid rgba(6, 78, 59, 0.1);
+  font-size: 0.88rem;
+}
+
+.weather-rain {
+  color: var(--sky-600);
+  font-weight: 600;
+}

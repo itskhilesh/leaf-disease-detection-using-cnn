@@ -1,0 +1,112 @@
+.crop-field-section {
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow: var(--glass-shadow);
+  background: #063826;
+  contain: layout style paint;
+}
+
+.crop-field-video {
+  display: block;
+  width: 100%;
+  height: clamp(230px, 34vw, 370px);
+  object-fit: cover;
+  object-position: center 45%;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.crop-field-gradient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(2, 44, 34, 0.42) 0%,
+    transparent 35%,
+    transparent 68%,
+    rgba(2, 44, 34, 0.55) 100%
+  );
+}
+
+.crop-field-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.95rem 1.25rem;
+}
+
+.crop-field-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.crop-field-pill {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.36rem 0.85rem;
+  border-radius: var(--radius-pill);
+  background: rgba(2, 44, 34, 0.85);
+  color: #ecfdf5;
+  font-size: 0.76rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.crop-field-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  pointer-events: auto;
+}
+
+.crop-field-btn {
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--emerald-950);
+  border-radius: var(--radius-pill);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--dur-fast) ease, transform var(--dur-fast) ease;
+}
+
+.crop-field-btn:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
+.crop-field-btn.is-active {
+  background: var(--lime-300);
+  border-color: var(--lime-400);
+  color: var(--emerald-950);
+}
+
+.crop-field-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.crop-field-caption {
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.32rem 0.8rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--emerald-950);
+  border: 1px solid #ffffff;
+}
