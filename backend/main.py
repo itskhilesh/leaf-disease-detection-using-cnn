@@ -3,9 +3,33 @@ from io import BytesIO
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from PIL import Image, UnidentifiedImageError
-
+from pydantic import BaseModel
+from services.environment_service import analyze_environment
+from services.disease_service import get_disease_profile
 from services.model_service import predict_disease, get_model_status
+class TopPrediction(BaseModel):
+    crop: str
+    disease: str
+    confidence: float
+    raw_label: str
 
+class PredictionResult(BaseModel):
+    crop: str
+    disease: str
+    is_healthy: bool
+    status: str
+    confidence: float
+    top_predictions: list[TopPrediction]
+
+class PredictionResponse(BaseModel):
+    filename: str
+    prediction: PredictionResult
+    disease_profile: dict | None = None
+class SensorData(BaseModel):
+    temperature: float
+    humidity: float
+    soil_moisture: float
+    soil_temperature: float | None = None
 
 # ==========================================
 # FASTAPI APPLICATION
@@ -53,12 +77,76 @@ def health_check():
         "model_status": "ready" if model_status["model_loaded"] else "not_loaded",
         "details": model_status
     }
+
+latest_sensor_data: SensorData | None = None
+
+
+@app.post("/sensors", tags=["Sensors"])
+def receive_sensor_data(data: SensorData):
+    global latest_sensor_data
+
+    latest_sensor_data = data
+
+    return {
+        "status": "success",
+        "message": "Sensor data received successfully",
+        "sensor_data": data
+    }
+
+@app.get("/sensors/latest", tags=["Sensors"])
+def get_latest_sensor_data():
+    if latest_sensor_data is None:
+        return {
+            "status": "no_data",
+            "message": "No sensor data received yet"
+        }
+
+    return {
+        "status": "success",
+        "sensor_data": latest_sensor_data
+    }
+
+@app.get("/environment/analyze", tags=["Environmental Analysis"])
+def analyze_disease_environment(raw_label: str):
+
+    if latest_sensor_data is None:
+        return {
+            "status": "no_sensor_data",
+            "message": "No sensor readings available. Send data to /sensors first."
+        }
+
+    disease_profile = get_disease_profile(raw_label)
+
+    if disease_profile is None:
+        return {
+            "status": "profile_not_found",
+            "message": "No disease profile found for the provided label.",
+            "raw_label": raw_label
+        }
+
+    analysis = analyze_environment(
+        latest_sensor_data,
+        disease_profile
+    )
+
+    return {
+        "status": "success",
+        "raw_label": raw_label,
+        "disease_profile": disease_profile,
+        "sensor_data": latest_sensor_data,
+        "environment_analysis": analysis
+    }
 # ==========================================
 # IMAGE PREDICTION ENDPOINT
 # ==========================================
 
 
-@app.post("/predict")
+@app.post(
+    "/predict",
+    response_model=PredictionResponse,
+    summary="Predict plant disease from a leaf image",
+    tags=["Prediction"]
+)
 async def predict(file: UploadFile = File(...)):
 
     # 1. Check file type
@@ -102,9 +190,14 @@ async def predict(file: UploadFile = File(...)):
     try:
         result = predict_disease(image)
 
+        disease_profile = get_disease_profile(
+            result["top_predictions"][0]["raw_label"]
+        )
+
         return {
             "filename": file.filename,
-            "prediction": result
+            "prediction": result,
+            "disease_profile": disease_profile
         }
 
     except Exception:

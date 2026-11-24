@@ -1,7 +1,6 @@
 
 # environment_service.py
 
-from knowledge.disease_profiles import DISEASE_PROFILES
 
 
 def validate_sensor_data(sensor_data):
@@ -147,4 +146,78 @@ def analyze_environment(
 
         "risk_score": None,
         "risk_level": "not_assessed"
+    }
+def analyze_environment(sensor_data, disease_profile):
+    if not disease_profile or not sensor_data:
+        return {
+            "status": "insufficient_data",
+            "message": "Environmental analysis unavailable"
+        }
+
+    environment = disease_profile.get("environment", {})
+    findings = []
+
+       # Temperature analysis
+    temp_info = environment.get("temperature_c", {})
+    temp = sensor_data.temperature
+
+    conducive_range = temp_info.get("conducive_range")
+    optimum_range = temp_info.get("optimum_reported_range")
+
+    if conducive_range:
+        if conducive_range[0] <= temp <= conducive_range[1]:
+
+            if optimum_range and optimum_range[0] <= temp <= optimum_range[1]:
+                temp_status = "within_optimum_range"
+                temp_message = "Temperature is within the reported optimum range."
+
+            else:
+                temp_status = "conducive"
+                temp_message = "Temperature is conducive to disease development."
+
+        else:
+            temp_status = "outside_conducive_range"
+            temp_message = "Temperature is outside the disease-conducive range."
+
+        findings.append({
+            "parameter": "temperature",
+            "value": temp,
+            "status": temp_status,
+            "message": temp_message
+        })
+    # Humidity analysis
+    humidity_info = environment.get("relative_humidity_percent", {})
+    humidity = sensor_data.humidity
+
+    humidity_min = humidity_info.get("conducive_minimum")
+    humidity_high = humidity_info.get("high_risk_reference")
+
+    if humidity_min is not None:
+        if humidity >= humidity_min:
+            findings.append({
+                "parameter": "humidity",
+                "value": humidity,
+                "status": "conducive",
+                "message": "Humidity may favor disease development."
+            })
+        else:
+            findings.append({
+                "parameter": "humidity",
+                "value": humidity,
+                "status": "below_conducive_reference",
+                "message": "Humidity is below the conducive reference."
+            })
+    # Soil moisture context (not a disease threshold)
+    soil_moisture = sensor_data.soil_moisture
+
+    findings.append({
+        "parameter": "soil_moisture",
+        "value": soil_moisture,
+        "status": "context_only",
+        "message": "Soil moisture is recorded for plant water-stress context. No universal disease threshold is applied."
+    })
+    return {
+        "status": "analyzed",
+        "disease": disease_profile.get("disease"),
+        "findings": findings
     }
