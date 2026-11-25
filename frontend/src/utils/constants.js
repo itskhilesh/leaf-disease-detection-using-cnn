@@ -1,5 +1,5 @@
 // ─── API ────────────────────────────────────────────────────────────
-export const API = '/api';
+export const API = import.meta.env.VITE_API_URL || '/api';
 
 // ─── Navigation items  [route, emoji, translation-key] ─────────────
 export const NAV_ITEMS = [
